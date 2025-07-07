@@ -1,6 +1,7 @@
+use crate::cell::Cell;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct BitBoard(pub u64);
 
 impl BitBoard {
@@ -29,27 +30,69 @@ impl BitBoard {
     pub const WHITE_PAWN_START: BitBoard = BitBoard::RANK_2;
     pub const BLACK_PAWN_START: BitBoard = BitBoard::RANK_7;
 
-    /// Creates a `BitBoard` from index
+    /// Creates a `BitBoard` with a single bit set at the given index (0..63).
     #[inline]
-    pub fn from_index(index: u8) -> BitBoard {
-        BitBoard(1 << index)
+    pub fn from_index(index: u8) -> Self {
+        Self(1 << index)
     }
 
-    /// Counts the number of set bits (population count).
+    /// Creates a `BitBoard` with a single bit set for the given cell.
     #[inline]
-    pub fn count(&self) -> u32 {
+    pub fn from_cell(cell: Cell) -> Self {
+        Self::from_index(cell.index())
+    }
+
+    /// Returns `true` if the bit at the given index is set.
+    #[inline]
+    pub fn is_index_set(&self, index: u8) -> bool {
+        (self.0 & (1 << index)) != 0
+    }
+
+    /// Returns `true` if the bit corresponding to the given cell is set.
+    #[inline]
+    pub fn is_cell_set(&self, cell: Cell) -> bool {
+        self.is_index_set(cell.index())
+    }
+
+    /// Sets the bit at the given index.
+    #[inline]
+    pub fn set_index(&mut self, index: u8) {
+        self.0 |= 1 << index;
+    }
+
+    /// Sets the bit corresponding to the given cell.
+    #[inline]
+    pub fn set_cell(&mut self, cell: Cell) {
+        self.set_index(cell.index());
+    }
+
+    /// Clears the bit at the given index.
+    #[inline]
+    pub fn clear_index(&mut self, index: u8) {
+        self.0 &= !(1 << index);
+    }
+
+    /// Clears the bit corresponding to the given cell.
+    #[inline]
+    pub fn clear_cell(&mut self, cell: Cell) {
+        self.clear_index(cell.index());
+    }
+
+    /// Returns the number of bits set to 1 (population count).
+    #[inline]
+    pub fn count_ones(&self) -> u32 {
         self.0.count_ones()
     }
 
-    /// Returns whether the bitboard is empty.
+    /// Returns `true` if no bits are set.
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.0 == 0
     }
 
-    /// Returns whether the bitboard has any set bits.
+    /// Returns `true` if any bit is set.
     #[inline]
-    pub fn is_any(&self) -> bool {
+    pub fn is_non_empty(&self) -> bool {
         self.0 != 0
     }
 
@@ -99,6 +142,16 @@ impl BitBoard {
     #[inline]
     pub fn southwest(&self) -> BitBoard {
         self.south().west()
+    }
+
+    /// Generic shift (positive = north/east, negative = south/west).
+    #[inline]
+    pub fn shift(&self, steps: i8) -> BitBoard {
+        if steps > 0 {
+            BitBoard(self.0 << steps as u64)
+        } else {
+            BitBoard(self.0 >> (-steps) as u64)
+        }
     }
 }
 
